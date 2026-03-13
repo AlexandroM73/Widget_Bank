@@ -23,7 +23,6 @@ def sort_by_date(data, reverse=True):
         data (list): список словарей, содержащих ключ 'date' в формате ISO (например, '2019-07-03T18:35:29.512364')
         reverse (bool): порядок сортировки — True для убывания (сначала новые), False для возрастания (по умолчанию True)
 
-
     Returns:
         list: новый отсортированный список словарей
     """
@@ -33,7 +32,6 @@ def sort_by_date(data, reverse=True):
 
     # Создаём новый отсортированный список, не изменяя исходный
     return sorted(data, key=parse_date, reverse=reverse)
-
 
 
 # Пример использования и проверки функций
@@ -57,7 +55,6 @@ if __name__ == '__main__':
     result_canceled = filter_by_state(test_data, 'CANCELED')
     print("\nРезультат с состоянием 'CANCELED':")
     print(result_canceled)
-
     print("\n=== ТЕСТИРОВАНИЕ ФУНКЦИИ sort_by_date ===")
 
     # Проверка сортировки по убыванию (по умолчанию)
@@ -69,7 +66,6 @@ if __name__ == '__main__':
     result_asc = sort_by_date(test_data, reverse=False)
     print("\nРезультат сортировки по возрастанию (сначала самые ранние):")
     print(result_asc)
-
     print("\n=== КОМБИНИРОВАННОЕ ИСПОЛЬЗОВАНИЕ: сначала фильтрация, потом сортировка ===")
 
     # Сначала фильтруем только 'EXECUTED' операции
