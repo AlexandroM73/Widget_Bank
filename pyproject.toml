@@ -23,6 +23,10 @@ lint = [
     "black (>=26.1.0,<27.0.0)",
     "isort (>=7.0.0,<8.0.0)"
 ]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)",
+    "pytest-cov (>=7.0.0,<8.0.0)"
+]
 
 [tool.black]
 line-length = 119
