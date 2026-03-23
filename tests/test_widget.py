@@ -1,5 +1,5 @@
 import pytest
-from src.widget import mask_account_card, get_date
+from ..src.widget import mask_account_card, get_date
 
 
 def test_mask_account_card_american_express():

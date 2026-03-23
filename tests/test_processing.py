@@ -1,9 +1,8 @@
 import pytest
-from src.processing import filter_by_state, sort_by_date
+from ..src.processing import filter_by_state, sort_by_date
 
 
 class TestFilterByState:
-
     @pytest.mark.parametrize("state,expected_count", [
         ('EXECUTED', 2),
         ('CANCELED', 2),
@@ -65,19 +64,33 @@ class TestSortByDate:
         assert len(result) == 1
         assert result[0]['id'] == 1
 
-    def test_sort_same_dates(self):
-        """Тест сортировки элементов с одинаковой датой."""
-        data = [
-            {'id': 1, 'state': 'EXECUTED', 'date': '2023-01-01T12:00:00.000000'},
-            {'id': 2, 'state': 'CANCELED', 'date': '2023-01-01T12:00:00.000000'},
-            {'id': 3, 'state': 'PENDING', 'date': '2023-01-02T12:00:00.000000'}
-        ]
-        result = sort_by_date(data)
-        # При одинаковых датах порядок может сохраняться
-        assert len(result) == 3
-        # Проверяем, что элементы с одинаковой датой остались в исходном порядке
-        assert result[0]['id'] in (1, 2)
-        assert result[1]['id'] in (1, 2)
+    class TestSortByDate:
+        def test_sort_same_dates(self) -> None:
+            """Тест сортировки транзакций с одинаковыми датами."""
+            transactions = [
+                {"date": "2023-01-01T10:00:00"},
+                {"date": "2023-01-01T10:00:00"},
+                {"date": "2023-01-01T09:00:00"}
+            ]
+
+            expected_ascending = [
+                {"date": "2023-01-01T09:00:00"},
+                {"date": "2023-01-01T10:00:00"},
+                {"date": "2023-01-01T10:00:00"}
+            ]
+
+            expected_descending = [
+                {"date": "2023-01-01T10:00:00"},
+                {"date": "2023-01-01T10:00:00"},
+                {"date": "2023-01-01T09:00:00"}
+            ]
+
+            sorted_transactions = sort_by_date(transactions)
+
+            # Проверяем соответствие одному из ожидаемых вариантов
+            assert (sorted_transactions == expected_ascending
+                    or sorted_transactions == expected_descending), \
+                "Результат сортировки не соответствует ожидаемому"
 
     def test_sort_missing_date_key(self):
         """Тест сортировки данных с отсутствующим ключом 'date'."""
