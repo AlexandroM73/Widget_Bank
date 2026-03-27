@@ -1,7 +1,12 @@
 import requests
 import os
+import logging
 from dotenv import load_dotenv
-from typing import Dict, Optional
+from typing import Dict
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Загружаем переменные окружения из .env-файла
 load_dotenv()
@@ -15,44 +20,14 @@ if not API_KEY:
 if not API_URL:
     raise ValueError("API_BASE_URL не найден в переменных окружения. Проверьте файл .env")
 
-
-def get_exchange_rate(base_currency: str, target_currency: str = "RUB") -> Optional[float]:
-    """
-    Получает текущий курс обмена из API.
-
-    Args:
-        base_currency (str): исходная валюта (например, 'USD', 'EUR').
-        target_currency (str): целевая валюта (по умолчанию 'RUB').
-
-    Returns:
-        Optional[float]: курс обмена или None при ошибке.
-    """
-    headers = {
-        "apikey": API_KEY
-    }
-    params = {
-        "base": base_currency,
-        "symbols": target_currency
-    }
-
-    try:
-        response = requests.get(API_URL, headers=headers, params=params, timeout=10)
-        response.raise_for_status()
-
-        data = response.json()
-        if "rates" in data and target_currency in data["rates"]:
-            return float(data["rates"][target_currency])
-        else:
-            print(f"Ошибка: курс для {base_currency}->{target_currency} не найден в ответе API")
-            return None
-    except requests.exceptions.RequestException as e:
-        print(f"Ошибка при запросе к API: {e}")
-        return None
+# Поддерживаемые валюты
+SUPPORTED_CURRENCIES = {"USD", "EUR"}
 
 
 def convert_to_rubles(transaction: Dict) -> float:
     """
-    Конвертирует сумму транзакции в рубли.
+    Конвертирует сумму транзакции в рубли, используя поле 'result' из ответа API.
+    'result' содержит уже готовую сумму в рублях.
 
     Args:
         transaction (Dict): словарь с данными транзакции, должен содержать:
@@ -60,25 +35,61 @@ def convert_to_rubles(transaction: Dict) -> float:
             - 'currency' (str): валюта операции ('RUB', 'USD', 'EUR').
 
     Returns:
-        float: сумма в рублях.
+        float: сумма в рублях (готовый результат из 'result' или 0.0 при ошибках).
+
+    Raises:
+        ValueError: если отсутствуют обязательные поля в транзакции или некорректные данные.
     """
-    amount = float(transaction.get("amount", 0))
-    currency = transaction.get("currency", "RUB").upper()
+    # Извлекаем данные из транзакции
+    amount = transaction.get("amount")
+    currency = transaction.get("currency")
+
+    # Валидация входных данных
+    if amount is None:
+        raise ValueError("Поле 'amount' отсутствует в транзакции")
+    if currency is None:
+        raise ValueError("Поле 'currency' отсутствует в транзакции")
+
+    try:
+        amount = float(amount)
+    except (ValueError, TypeError):
+        raise ValueError(f"Некорректное значение 'amount': {amount}")
+
+    currency = currency.upper()
+    logger.debug(f"Обрабатываем транзакцию: {amount} {currency}")
 
     # Если валюта уже рубли — возвращаем сумму без изменений
     if currency == "RUB":
+        logger.debug("Валюта — RUB, конвертация не требуется")
         return amount
 
-    # Для USD и EUR получаем курс и конвертируем
-    if currency in ["USD", "EUR"]:
-        rate = get_exchange_rate(currency)
-        if rate is not None:
-            return amount * rate
+    # Проверка поддерживаемых валют
+    if currency not in SUPPORTED_CURRENCIES:
+        logger.warning(f"Неподдерживаемая валюта {currency}, возвращаем 0.0 RUB")
+        return 0.0
+
+    # Параметры запроса к API
+    headers = {"apikey": API_KEY}
+    params = {"base": currency, "symbols": "RUB"}
+
+    try:
+        response = requests.get(API_URL, headers=headers, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()  # Инициализация внутри try
+        logger.debug(f"Ответ API: {data}")
+
+        if "result" in data:
+            converted_amount = data["result"]
+            logger.info(f"Конвертировано: {amount} {currency} → {converted_amount:.2f} RUB")
+            return float(converted_amount)
         else:
-            # При ошибке API возвращаем 0.0 и выводим предупреждение
-            print(f"Предупреждение: не удалось получить курс для {currency}, сумма установлена в 0.0 RUB")
+            logger.error(f"Поле 'result' отсутствует в ответе API для {currency}: {data}")
             return 0.0
-    else:
-        # Для других валют возвращаем 0.0 с предупреждением
-        print(f"Предупреждение: неподдерживаемая валюта {currency}, сумма установлена в 0.0 RUB")
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Ошибка при запросе к API: {e}")
+        return 0.0
+    except (KeyError, TypeError, ValueError) as e:
+        # data теперь гарантированно определена или None
+        logger.error(f"Ошибка обработки ответа API: {e}, данные: {data if 'data' in locals() else 'N/A'}")
         return 0.0
