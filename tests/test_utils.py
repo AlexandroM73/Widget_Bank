@@ -3,6 +3,7 @@ import json
 from unittest.mock import patch, mock_open
 from utils import read_json_transactions
 
+
 # Базовые фикстуры
 @pytest.fixture
 def mock_file_exists():
@@ -10,11 +11,13 @@ def mock_file_exists():
     with patch("os.path.exists", return_value=True) as mock:
         yield mock
 
+
 @pytest.fixture
 def mock_file_not_exists():
     """Фикстура для имитации отсутствия файла."""
     with patch("os.path.exists", return_value=False) as mock:
         yield mock
+
 
 # Параметризованная фикстура с расширенным набором тестовых случаев
 @pytest.fixture(params=[
@@ -68,6 +71,7 @@ def json_test_case(request):
     """
     return request.param
 
+
 class TestReadJsonTransactions:
     def test_valid_json_file(self, mock_file_exists):
         """Тест корректного JSON‑файла с данными."""
@@ -95,6 +99,7 @@ class TestReadJsonTransactions:
             result = read_json_transactions("empty.json")
 
         assert result == []
+
 
 class TestReadJsonTransactionsParametrized:
     @pytest.mark.parametrize("exception_type", [OSError, PermissionError])

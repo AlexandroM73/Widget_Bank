@@ -1,5 +1,49 @@
 import pytest
 from typing import List, Dict, Any
+from unittest.mock import mock_open, patch
+
+
+@pytest.fixture
+def mock_csv_file(request):
+    """Фикстура, создающая мок для open с заданными CSV‑данными."""
+    data = request.param if hasattr(request, 'param') else ""
+    mock = mock_open(read_data=data)
+    with patch('builtins.open', mock) as mock_patch:
+        yield mock_patch
+
+
+@pytest.fixture
+def mock_file_exists():
+    with patch('file_reader.os.path.exists') as mock:
+        yield mock
+
+
+@pytest.fixture
+def mock_builtins_open():
+    # Создаём мок с данными по умолчанию (можно переопределить в тестах)
+    mock = mock_open(read_data="")
+    with patch('builtins.open', mock) as mock_patch:
+        yield mock_patch
+
+
+@pytest.fixture
+def csv_sample_data():
+    return "id,amount,currency\n1,1000,RUB\n2,2000,USD"
+
+
+@pytest.fixture
+def empty_csv_data():
+    return ""
+
+
+@pytest.fixture
+def headers_only_csv_data():
+    return "id,amount,currency"
+
+
+@pytest.fixture
+def csv_with_spaces_data():
+    return " id , amount , currency \n 1 , 1000 , RUB "
 
 
 @pytest.fixture

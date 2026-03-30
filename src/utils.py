@@ -3,6 +3,7 @@ import os
 import logging
 from typing import List, Dict, Any
 
+
 # Настройка логгера
 def setup_logger() -> logging.Logger:
     """Настраивает логгер для модуля utils."""
@@ -33,8 +34,10 @@ def setup_logger() -> logging.Logger:
 
     return logger
 
+
 # Инициализируем логгер
 logger = setup_logger()
+
 
 def read_json_transactions(file_path: str) -> List[Dict[str, Any]]:
     """
