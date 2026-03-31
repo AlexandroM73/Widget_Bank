@@ -84,33 +84,6 @@ class TestExcelReader:
             read_excel_transactions('document.xls')
         assert "Ожидался файл .xlsx" in str(exc_info.value)
 
-
-class TestExcelReader:
-    @patch('file_reader.os.path.exists')
-    @patch('pandas.read_excel')
-    def test_read_excel_success(self, mock_read_excel, mock_exists):
-        """Тест успешного чтения Excel с использованием Mock."""
-        mock_exists.return_value = True
-        test_data = pd.DataFrame({
-            'id': [1, 2],
-            'amount': [1000, 2000],
-            'currency': ['RUB', 'USD']
-        })
-        mock_read_excel.return_value = test_data
-        result = read_excel_transactions('transactions_excel.xlsx')
-        mock_read_excel.assert_called_once_with('transactions_excel.xlsx', sheet_name=0)
-        mock_exists.assert_called_once_with('transactions_excel.xlsx')
-        assert len(result) == 2
-        assert result[0] == {'id': '1', 'amount': '1000', 'currency': 'RUB'}
-
-    @patch('file_reader.os.path.exists')
-    def test_excel_invalid_extension(self, mock_exists):
-        """Тест на файл с неверным расширением."""
-        mock_exists.return_value = True
-        with pytest.raises(ValueError) as exc_info:
-            read_excel_transactions('document.xls')
-        assert "Ожидался файл .xlsx" in str(exc_info.value)
-
     @patch('file_reader.os.path.exists')
     @patch('pandas.read_excel')
     def test_excel_multiple_sheets(self, mock_read_excel, mock_exists):
