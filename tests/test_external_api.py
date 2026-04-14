@@ -2,14 +2,13 @@ import sys
 import os
 import pytest
 from unittest.mock import patch, Mock
+from external_api import convert_to_rubles
 import requests
 
 # Добавляем путь к src в sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 src_path = os.path.join(current_dir, '..', 'src')
 sys.path.insert(0, src_path)
-
-from external_api import convert_to_rubles
 
 
 class TestConvertToRubles:

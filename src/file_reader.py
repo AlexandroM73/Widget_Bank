@@ -1,13 +1,11 @@
-import csv
-import os
 from typing import Any, Dict, List
-
+import os
 import pandas as pd
 
 
 def read_csv_transactions(file_path: str) -> List[Dict[str, Any]]:
     """
-    Читает финансовые транзакции из CSV‑файла.
+    Читает финансовые транзакции из CSV‑файла с разделителем ';'.
 
     Функция открывает CSV‑файл, парсит его содержимое с помощью `csv.DictReader`
     и возвращает список словарей, где каждый словарь представляет одну транзакцию.
@@ -43,20 +41,38 @@ def read_csv_transactions(file_path: str) -> List[Dict[str, Any]]:
         * Первая строка CSV‑файла интерпретируется как заголовки колонок.
         * Пробелы в начале и конце ключей и значений удаляются автоматически.
     """
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Файл не найден: {file_path}")
-    transactions = []
-    with open(file_path, 'r', encoding='utf-8') as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            cleaned_row = {key.strip(): value.strip() for key, value in row.items()}
-            transactions.append(cleaned_row)
+    transactions = []  # Инициализируем список транзакций
+
+    with open(file_path, 'r', encoding='utf-8') as f:
+        # Читаем все строки файла
+        lines = f.readlines()
+
+        if not lines:
+            return transactions  # Возвращаем пустой список, если файл пустой
+
+        # Первая строка — заголовки столбцов
+        headers = lines[0].strip().split(';')
+
+        # Обрабатываем оставшиеся строки — это данные транзакций
+        for line in lines[1:]:
+            # Разделяем строку по точке с запятой
+            values = line.strip().split(';')
+
+            # Создаём словарь транзакции: сопоставляем заголовки и значения
+            transaction = {}
+            for i, header in enumerate(headers):
+                # Если индекс выходит за пределы списка значений, используем пустую строку
+                value = values[i] if i < len(values) else ''
+                transaction[header.strip()] = value.strip()
+
+            transactions.append(transaction)
+
     return transactions
 
 
 def read_excel_transactions(file_path: str) -> List[Dict[str, Any]]:
     """
-    Читает финансовые транзакции из Excel‑файла (.xlsx).
+    Читает финансовые транзакции из Excel‑файла (.xlsx) и унифицирует ключи.
 
     Функция использует `pandas.read_excel` для загрузки данных из первого листа Excel‑файла,
     преобразует их в список словарей и нормализует значения (NaN → None, float → int, если целое).
@@ -99,23 +115,18 @@ def read_excel_transactions(file_path: str) -> List[Dict[str, Any]]:
         * `None` используется для представления пустых ячеек (`NaN` в pandas).
         * Остальные значения приводятся к строке для единообразия.
     """
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Файл не найден: {file_path}")
-    if not file_path.lower().endswith('.xlsx'):
-        raise ValueError(f"Ожидался файл .xlsx, получен: {file_path}")
-
-    df = pd.read_excel(file_path, sheet_name=0)
-    transactions = df.to_dict('records')
-
-    for transaction in transactions:
-        for key, value in transaction.items():
-            if pd.isna(value):
-                transaction[key] = None
-            else:
-                # Если значение — число с плавающей точкой и оно целое, преобразуем в int
-                if isinstance(value, float) and value.is_integer():
-                    value = int(value)
-                # Конвертируем в строку
-                transaction[key] = str(value)
-
+    df = pd.read_excel(file_path)
+    transactions = []
+    for _, row in df.iterrows():
+        transaction = {
+            'date': str(row.get('date', '')),
+            'description': str(row.get('description', '')),
+            'amount': str(row.get('amount', '')),
+            'currency_name': str(row.get('currency_name', '')),  # Название валюты
+            'currency_code': str(row.get('currency_code', '')),  # Код валюты
+            'from': str(row.get('from', '')),
+            'to': str(row.get('to', '')),
+            'state': str(row.get('state', ''))
+        }
+        transactions.append(transaction)
     return transactions
