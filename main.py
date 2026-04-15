@@ -196,11 +196,33 @@ def safe_parse_date(date_str: str) -> datetime:
 
     return datetime.min  # Если ни один формат не подошёл
 
+def get_currency_code(transaction: Dict[str, Any]) -> str:
+    """Извлекает код валюты из транзакции."""
+    # JSON: operationAmount.currency.code
+    if 'operationAmount' in transaction:
+        operation_amount = transaction['operationAmount']
+        if isinstance(operation_amount, dict) and 'currency' in operation_amount:
+            currency = operation_amount['currency']
+            if isinstance(currency, dict) and 'code' in currency:
+                return str(currency['code']).strip().upper()
+
+    # CSV/XLSX и другие варианты: ищем разные названия поля
+    currency_fields = ['currency_code', 'currency', 'currencyCode', 'curr_code']
+    for field in currency_fields:
+        if field in transaction:
+            return str(transaction[field]).strip().upper()
+
+    # Нормализация обозначений рубля
+    code = str(transaction.get('currency_code', '')).strip().upper()
+    if code in ['РУБ', 'РУБ.', 'RUBLE']:
+        return 'RUB'
+
+    return ''
 
 def main():
     # Папка с данными относительно расположения main.py
-    transactions = []
-    filtered_transactions = []
+    transactions = [] # Инициализируем переменную для хранения транзакций
+    filtered_transactions = [] # Инициализируем пустой список
     script_dir = Path(__file__).parent
     data_dir = script_dir / "data"  # папка data
 
@@ -221,8 +243,6 @@ def main():
     AVAILABLE_STATUSES = ['EXECUTED', 'CANCELED', 'PENDING']
     DEFAULT_CATEGORIES = ['супермаркет', 'ресторан', 'транспорт', 'аптека', 'перевод']
 
-    # transactions = None  # Инициализируем переменную для хранения транзакций
-    # filtered_transactions = []  # Инициализируем пустой список
 
     while True:
         print("\nВыберите необходимый пункт меню:")
@@ -365,9 +385,20 @@ def main():
                 if only_rub in ['да', 'yes', 'y']:
                     filtered_transactions = [
                         t for t in filtered_transactions
-                        if t.get('currency', '').strip().upper() == 'RUB'
+                        if get_currency_code(t) == 'RUB'
                     ]
                     print(f"Программа: После фильтрации по валюте осталось {len(filtered_transactions)} транзакций.")
+
+                # # 3. ФИЛЬТРАЦИЯ ПО ВАЛЮТЕ (после сортировки)
+                # only_rub = input(
+                #     "Программа: Выводить только рублёвые транзакции? Да/Нет\nПользователь: "
+                # ).strip().lower()
+                # if only_rub in ['да', 'yes', 'y']:
+                #     filtered_transactions = [
+                #         t for t in filtered_transactions
+                #         if t.get('currency_code', '').strip().upper() == 'RUB'
+                #     ]
+                #     print(f"Программа: После фильтрации по валюте осталось {len(filtered_transactions)} транзакций.")
 
                 # 4. ПОИСК ПО ОПИСАНИЮ (после фильтрации по валюте)
                 search_by_desc = input(
