@@ -196,6 +196,7 @@ def safe_parse_date(date_str: str) -> datetime:
 
     return datetime.min  # Если ни один формат не подошёл
 
+
 def get_currency_code(transaction: Dict[str, Any]) -> str:
     """Извлекает код валюты из транзакции."""
     # JSON: operationAmount.currency.code
@@ -219,10 +220,11 @@ def get_currency_code(transaction: Dict[str, Any]) -> str:
 
     return ''
 
+
 def main():
     # Папка с данными относительно расположения main.py
-    transactions = [] # Инициализируем переменную для хранения транзакций
-    filtered_transactions = [] # Инициализируем пустой список
+    transactions = []  # Инициализируем переменную для хранения транзакций
+    filtered_transactions = []  # Инициализируем пустой список
     script_dir = Path(__file__).parent
     data_dir = script_dir / "data"  # папка data
 
@@ -242,7 +244,6 @@ def main():
     # Словарь для нормализации ввода статусов
     AVAILABLE_STATUSES = ['EXECUTED', 'CANCELED', 'PENDING']
     DEFAULT_CATEGORIES = ['супермаркет', 'ресторан', 'транспорт', 'аптека', 'перевод']
-
 
     while True:
         print("\nВыберите необходимый пункт меню:")
